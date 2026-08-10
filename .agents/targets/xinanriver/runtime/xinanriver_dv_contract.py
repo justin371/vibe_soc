@@ -13,6 +13,7 @@ SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 TARGET_RE = re.compile(r"^//[A-Za-z0-9_./+-]+:[A-Za-z0-9_./+-]+$")
 SELECTOR_RE = re.compile(r"^[A-Za-z0-9_./+-]+:[A-Za-z0-9_./+@-]+$")
 PROFILE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:+/-]{0,127}$")
+BRANCH_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
 ABSOLUTE_RE = re.compile(r"(?:^[A-Za-z]:[\\/])|(?:^/)")
 
 
@@ -113,18 +114,26 @@ def validate_profile(profile: dict[str, Any]) -> None:
 
 
 def workflow_inputs(
-    profile: dict[str, Any], project_sha: str, *, map_profile: str | None = None
+    profile: dict[str, Any],
+    project_sha: str,
+    *,
+    project_branch: str | None = None,
+    map_profile: str | None = None,
 ) -> dict[str, Any]:
     validate_profile(profile)
     if not SHA_RE.fullmatch(project_sha):
         raise ContractError("project_sha must be a full lowercase Git SHA")
+    if project_branch is None:
+        project_branch = profile["project"]["default_branch"]
+    if not BRANCH_RE.fullmatch(project_branch):
+        raise ContractError("project_branch is not safe")
     if map_profile is None:
         map_profile = f"vcs-simmer-compile-main-adapt-{project_sha[:8]}"
     if not PROFILE_RE.fullmatch(map_profile):
         raise ContractError("map_profile is not safe")
     project = profile["project"]
     return {
-        "project_branch": project["default_branch"],
+        "project_branch": project_branch,
         "expected_project_sha": project_sha,
         "map_mode": "target",
         "entry_target": project["entry_target"],
@@ -173,7 +182,10 @@ def _all_zero(value: Any) -> bool:
 
 
 def _summarize_factory_evidence(
-    profile: dict[str, Any], artifact_dir: Path
+    profile: dict[str, Any],
+    artifact_dir: Path,
+    *,
+    expected_project_branch: str | None = None,
 ) -> dict[str, Any]:
     bundle = _read_json(artifact_dir, "ai-bundle-verification.json")
     factory = _read_json(artifact_dir, "factory-summary.json")
@@ -188,8 +200,14 @@ def _summarize_factory_evidence(
         binding_errors.append("AI bundle is not source-free")
     if submission.get("agent_bundle_status") != "validated":
         binding_errors.append("agent bundle was not validated in the isolated clone")
-    if submission.get("project_branch") != project["default_branch"]:
-        binding_errors.append("project branch mismatch")
+    project_branch = submission.get("project_branch", "")
+    if not BRANCH_RE.fullmatch(project_branch):
+        binding_errors.append("project branch is not safe")
+    if expected_project_branch is not None:
+        if not BRANCH_RE.fullmatch(expected_project_branch):
+            binding_errors.append("expected project branch is not safe")
+        elif project_branch != expected_project_branch:
+            binding_errors.append("project branch mismatch")
     if submission.get("test_selector") != project["test_selector"]:
         binding_errors.append("test selector mismatch")
     if submission.get("source_worktree_writes") != "none":
@@ -221,6 +239,7 @@ def _summarize_factory_evidence(
         "coverage": "not_run",
         "binding_errors": binding_errors,
         "commit_sha": submission.get("project_commit"),
+        "project_branch": project_branch,
         "vibe_soc_ref": submission.get("agent_bundle_ref"),
         "entry_target": project["entry_target"],
         "test_selector": submission.get("test_selector"),
@@ -234,10 +253,19 @@ def _summarize_factory_evidence(
     }
 
 
-def summarize_evidence(profile: dict[str, Any], artifact_dir: Path) -> dict[str, Any]:
+def summarize_evidence(
+    profile: dict[str, Any],
+    artifact_dir: Path,
+    *,
+    expected_project_branch: str | None = None,
+) -> dict[str, Any]:
     validate_profile(profile)
     if (artifact_dir / "factory-summary.json").is_file():
-        return _summarize_factory_evidence(profile, artifact_dir)
+        return _summarize_factory_evidence(
+            profile,
+            artifact_dir,
+            expected_project_branch=expected_project_branch,
+        )
     metadata = _read_json(artifact_dir, "metadata.json")
     verification = _read_json(artifact_dir, "verification.json")
     compile_assessment = _read_json(artifact_dir, "compile-assessment.json")
@@ -278,6 +306,7 @@ def summarize_evidence(profile: dict[str, Any], artifact_dir: Path) -> dict[str,
         "coverage": "not_run",
         "binding_errors": binding_errors,
         "commit_sha": metadata.get("commit_sha"),
+        "project_branch": execution.get("project_branch", project["default_branch"]),
         "entry_target": execution.get("entry_target"),
         "test_selector": execution.get("test_selector"),
         "simulator": execution.get("simulator"),

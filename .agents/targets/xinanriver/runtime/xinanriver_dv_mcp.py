@@ -34,15 +34,21 @@ def get_profile() -> dict:
 
 
 @mcp.tool()
-def plan_target_run(project_sha: str) -> dict:
+def plan_target_run(project_sha: str, project_branch: str | None = None) -> dict:
     """Render the fixed ETX target workflow inputs without dispatching it."""
-    return workflow_inputs(PROFILE_DATA, project_sha)
+    return workflow_inputs(PROFILE_DATA, project_sha, project_branch=project_branch)
 
 
 @mcp.tool()
-def review_evidence(artifact_dir: str) -> dict:
+def review_evidence(
+    artifact_dir: str, expected_project_branch: str | None = None
+) -> dict:
     """Review a retained source-free artifact directory."""
-    return summarize_evidence(PROFILE_DATA, Path(artifact_dir))
+    return summarize_evidence(
+        PROFILE_DATA,
+        Path(artifact_dir),
+        expected_project_branch=expected_project_branch,
+    )
 
 
 if __name__ == "__main__":

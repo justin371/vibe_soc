@@ -37,8 +37,16 @@ class XinAnRiverAgentBundleTests(unittest.TestCase):
         )
         self.assertEqual(inputs["test_selector"], "sys_tb:sys_iod_sanity_test@1")
         self.assertEqual(inputs["map_mode"], "target")
+        source_inputs = workflow_inputs(
+            profile,
+            "b1eec4211c323d8c5e64ba80e323cf6394b77399",
+            project_branch="lw/claude-xinanriver-ai-tools",
+        )
+        self.assertEqual(source_inputs["project_branch"], "lw/claude-xinanriver-ai-tools")
         with self.assertRaises(ContractError):
             workflow_inputs(profile, "B1EEC4211C323D8C5E64BA80E323CF6394B77399")
+        with self.assertRaises(ContractError):
+            workflow_inputs(profile, "b1eec4211c323d8c5e64ba80e323cf6394b77399", project_branch="/bad")
 
     def test_generated_claude_codex_parity(self):
         profile = load_profile(PROFILE_DIR / "profile.json")
@@ -130,7 +138,7 @@ class XinAnRiverAgentBundleTests(unittest.TestCase):
             (artifact / "submission.txt").write_text(
                 "\n".join(
                     [
-                        "project_branch: main",
+                        "project_branch: lw/claude-xinanriver-ai-tools",
                         "project_commit: b1eec4211c323d8c5e64ba80e323cf6394b77399",
                         "test_selector: sys_tb:sys_iod_sanity_test@1",
                         "requested_host: sh-cloud17",
@@ -145,7 +153,11 @@ class XinAnRiverAgentBundleTests(unittest.TestCase):
             (artifact / "lsf-exit-code.txt").write_text("0\n", encoding="utf-8")
             (artifact / "simmer-exit-code.txt").write_text("0\n", encoding="utf-8")
             (artifact / "command.txt").write_text("bazel simmer\n", encoding="utf-8")
-            summary = summarize_evidence(profile, artifact)
+            summary = summarize_evidence(
+                profile,
+                artifact,
+                expected_project_branch="lw/claude-xinanriver-ai-tools",
+            )
             self.assertEqual(summary["overall"], "pass")
             self.assertEqual(summary["bazel_map"], "not_run")
             self.assertEqual(summary["simulation"], "pass")
@@ -153,6 +165,7 @@ class XinAnRiverAgentBundleTests(unittest.TestCase):
                 summary["commit_sha"],
                 "b1eec4211c323d8c5e64ba80e323cf6394b77399",
             )
+            self.assertEqual(summary["project_branch"], "lw/claude-xinanriver-ai-tools")
 
 
 if __name__ == "__main__":
