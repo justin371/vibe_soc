@@ -15,7 +15,8 @@ include $(PROJECT_ROOT)/scripts/config.mk
         flist validate-flist comp sim run test regress report coverage \
         coverage-regress coverage-report verdi lint cdc syn formal formal-upf clp-upf \
         clean debugclean deepclean \
-        agent-sync agent-check agent-setup mcp-setup
+        agent-sync agent-check agent-setup mcp-setup \
+        xinanriver-agent-bundle xinanriver-agent-check
 
 help:
 	@echo "vibe_soc SoC Build System"
@@ -26,6 +27,8 @@ help:
 	@echo "  make agent-setup                  装配 agent/skill/MCP 开发环境"
 	@echo "  make agent-sync                   从 .agents 重新生成各客户端配置"
 	@echo "  make agent-check                  校验 agent/MCP/loop 契约无漂移"
+	@echo "  make xinanriver-agent-bundle      生成 XinAnRiver Claude/Codex bundle"
+	@echo "  make xinanriver-agent-check       校验已有 XinAnRiver bundle"
 	@echo "  make <target> [MODULE=<path>]     构建指定模块（默认 chip/top）"
 	@echo "  make module MODULE=<path> TARGET=<target>"
 	@echo ""
@@ -75,6 +78,18 @@ agent-check:
 	@$(PYTHON_RUN) $(PROJECT_ROOT)/scripts/sync_grok_mcp_config.py --check
 	@test -L $(PROJECT_ROOT)/.claude/agents && test -L $(PROJECT_ROOT)/.claude/skills
 	@echo "[AGENT] all checks passed"
+
+XINANRIVER_AGENT_OUTPUT ?= $(PROJECT_ROOT)/tmp/xinanriver-agent-bundle
+
+xinanriver-agent-bundle:
+	@$(PYTHON_RUN) $(PROJECT_ROOT)/scripts/generate_target_agent_bundle.py \
+		--profile-dir $(PROJECT_ROOT)/.agents/targets/xinanriver \
+		--output-dir $(XINANRIVER_AGENT_OUTPUT) --write
+
+xinanriver-agent-check:
+	@$(PYTHON_RUN) $(PROJECT_ROOT)/scripts/generate_target_agent_bundle.py \
+		--profile-dir $(PROJECT_ROOT)/.agents/targets/xinanriver \
+		--output-dir $(XINANRIVER_AGENT_OUTPUT) --check
 
 list-modules:
 	@find $(PROJECT_ROOT)/chip $(PROJECT_ROOT)/ip -mindepth 2 -maxdepth 3 \

@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "profile_name": "xinanriver-dv",
+  "project": {
+    "repository_key": "rtl_dv_dev/XinAnRiver",
+    "default_branch": "main",
+    "build_system": "bazel",
+    "bazel_mode": "legacy_workspace",
+    "workspace_files": ["WORKSPACE", "WORKSPACE.bazel"],
+    "entry_target": "//hw/dv/project_benches/sys/tb/tests:sys_iod_sanity_test",
+    "test_selector": "sys_tb:sys_iod_sanity_test@1",
+    "simulator": "VCS"
+  },
+  "execution": {
+    "automation_repository": "Lightelligence/etx-validation-lwang",
+    "automation_ref": "lw/xinanriver-ai-tools-etx",
+    "workflow": "validate_xinanriver_ai_tools.yml",
+    "runner_labels": ["self-hosted", "linux", "x64", "etx-vcs"],
+    "lsf": {
+      "queue": "syn",
+      "slots": 8,
+      "wall_minutes": 120,
+      "licensed_tools": ["bazel", "simmer", "VCS"]
+    },
+    "checkout_policy": "isolated_exact_commit",
+    "runner_policy": "github_runner_then_bsub"
+  },
+  "evidence": {
+    "required_files": [
+      "metadata.json",
+      "verification.json",
+      "compile-assessment.json",
+      "bazel-targets.json",
+      "source-files.csv",
+      "sv-dependencies.csv",
+      "unresolved-edges.csv"
+    ],
+    "status_values": ["pass", "pass_with_partial_map", "fail", "not_run"],
+    "partial_map_is_pass": false,
+    "source_free_artifact": true,
+    "credential_scan": "required"
+  },
+  "safety": {
+    "approved_vip": "vip_vcs_svt_pkg",
+    "protected_path_parts": [
+      "encrypted",
+      "encrypted_vip",
+      "secureip",
+      "third_party",
+      "third-party",
+      "vendor",
+      "vip"
+    ],
+    "free_form_workflow_command": false,
+    "source_mr_merge": false
+  },
+  "mcp_servers": [
+    {
+      "name": "dv-bazel",
+      "script": "scripts/xinanriver_dv_mcp.py",
+      "default_enabled": true,
+      "startup_timeout_sec": 30,
+      "tool_timeout_sec": 300
+    },
+    {
+      "name": "dv-evidence",
+      "script": "scripts/xinanriver_dv_mcp.py",
+      "default_enabled": true,
+      "startup_timeout_sec": 30,
+      "tool_timeout_sec": 300
+    },
+    {
+      "name": "dv-etx",
+      "script": "scripts/xinanriver_dv_mcp.py",
+      "default_enabled": true,
+      "startup_timeout_sec": 30,
+      "tool_timeout_sec": 300
+    }
+  ],
+  "roles": [
+    "dv-architect",
+    "dv-bazel-owner",
+    "dv-test-owner",
+    "dv-regression-owner",
+    "dv-evidence-reviewer",
+    "dv-etx-runner"
+  ]
+}

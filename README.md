@@ -360,6 +360,25 @@ router 只输出需要读取的规则、需要执行的检查和 fingerprint 缓
 
 EDA 阶段应走注册工具入口：验证调用 `soc-build.soc_sim`，综合调用 `soc-build.soc_syn`，OpenROAD 调用 `soc-openroad.soc_openroad_*`。自动化流程不使用直接 `make`、`iverilog`、`vvp`、`yosys`、`openroad` 等 shell fallback。
 
+### XinAnRiver legacy Bazel DV bundle
+
+XinAnRiver 使用独立的 legacy WORKSPACE/Bazel profile，不复用 SoC 的
+`soc-build`、CRG 或 OpenROAD 角色。运行：
+
+```bash
+python3 scripts/generate_target_agent_bundle.py \
+  --profile-dir .agents/targets/xinanriver \
+  --output-dir <XinAnRiver-worktree> --write
+python3 scripts/generate_target_agent_bundle.py \
+  --profile-dir .agents/targets/xinanriver \
+  --output-dir <XinAnRiver-worktree> --check
+```
+
+该 bundle 从一份 canonical profile 生成 Claude Code 和 Codex 配置，使用
+`//hw/dv/project_benches/sys/tb/tests:sys_iod_sanity_test`、
+`sys_tb:sys_iod_sanity_test@1` 和 ETX `Bazel → simmer → VCS → bsub` 路径。
+实现说明和 parity 矩阵见 `docs/xinanriver-ai-tools-parity.md`。
+
 ## SoC Reviewer 与知识库
 
 `soc-reviewer` 在 `merge` 中执行一次 normal review，在 `signoff` 中执行
