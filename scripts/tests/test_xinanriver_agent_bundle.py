@@ -106,6 +106,54 @@ class XinAnRiverAgentBundleTests(unittest.TestCase):
             self.assertEqual(summary["compile"], "pass")
             self.assertEqual(summary["simulation"], "not_run")
 
+    def test_factory_evidence_is_a_functional_pass(self):
+        profile = load_profile(PROFILE_DIR / "profile.json")
+        with tempfile.TemporaryDirectory() as temp:
+            artifact = Path(temp)
+            (artifact / "ai-bundle-verification.json").write_text(
+                json.dumps({"status": "passed", "source_free_bundle": True}),
+                encoding="utf-8",
+            )
+            (artifact / "factory-summary.json").write_text(
+                json.dumps(
+                    {
+                        "passed": True,
+                        "factory_component_unregistered": False,
+                        "factory_test_not_found": False,
+                        "simmer_exit_code": 0,
+                        "uvm_error_count": ["0"],
+                        "uvm_fatal_count": ["0"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (artifact / "submission.txt").write_text(
+                "\n".join(
+                    [
+                        "project_branch: main",
+                        "project_commit: b1eec4211c323d8c5e64ba80e323cf6394b77399",
+                        "test_selector: sys_tb:sys_iod_sanity_test@1",
+                        "requested_host: sh-cloud17",
+                        "agent_bundle_status: validated",
+                        "agent_bundle_ref: 876ab1603c568ed0df61998da2d1394468aa31e9",
+                        "source_worktree_writes: none",
+                        "lsf_job_id: 722272",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            (artifact / "lsf-exit-code.txt").write_text("0\n", encoding="utf-8")
+            (artifact / "simmer-exit-code.txt").write_text("0\n", encoding="utf-8")
+            (artifact / "command.txt").write_text("bazel simmer\n", encoding="utf-8")
+            summary = summarize_evidence(profile, artifact)
+            self.assertEqual(summary["overall"], "pass")
+            self.assertEqual(summary["bazel_map"], "not_run")
+            self.assertEqual(summary["simulation"], "pass")
+            self.assertEqual(
+                summary["commit_sha"],
+                "b1eec4211c323d8c5e64ba80e323cf6394b77399",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

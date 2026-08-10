@@ -92,6 +92,11 @@ def validate_profile(profile: dict[str, Any]) -> None:
     required_files = evidence.get("required_files")
     if not isinstance(required_files, list) or "verification.json" not in required_files:
         errors.append("evidence.required_files must include verification.json")
+    factory_files = evidence.get("factory_required_files")
+    if not isinstance(factory_files, list) or "factory-summary.json" not in factory_files:
+        errors.append(
+            "evidence.factory_required_files must include factory-summary.json"
+        )
     if evidence.get("partial_map_is_pass") is not False:
         errors.append("partial map must not be promoted to pass")
     if safety.get("approved_vip") != "vip_vcs_svt_pkg":
@@ -139,8 +144,100 @@ def _read_json(artifact_dir: Path, name: str) -> dict[str, Any]:
     return value
 
 
+def _read_key_value_file(artifact_dir: Path, name: str) -> dict[str, str]:
+    path = artifact_dir / name
+    if not path.is_file():
+        raise ContractError(f"missing evidence file: {name}")
+    result: dict[str, str] = {}
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if ": " not in line:
+            continue
+        key, value = line.split(": ", 1)
+        result[key] = value
+    return result
+
+
+def _read_exit_code(artifact_dir: Path, name: str) -> int:
+    path = artifact_dir / name
+    if not path.is_file():
+        raise ContractError(f"missing evidence file: {name}")
+    try:
+        return int(path.read_text(encoding="utf-8").strip())
+    except ValueError as exc:
+        raise ContractError(f"invalid exit code: {name}") from exc
+
+
+def _all_zero(value: Any) -> bool:
+    values = value if isinstance(value, list) else [value]
+    return bool(values) and all(str(item) == "0" for item in values)
+
+
+def _summarize_factory_evidence(
+    profile: dict[str, Any], artifact_dir: Path
+) -> dict[str, Any]:
+    bundle = _read_json(artifact_dir, "ai-bundle-verification.json")
+    factory = _read_json(artifact_dir, "factory-summary.json")
+    submission = _read_key_value_file(artifact_dir, "submission.txt")
+    lsf_exit_code = _read_exit_code(artifact_dir, "lsf-exit-code.txt")
+    simmer_exit_code = _read_exit_code(artifact_dir, "simmer-exit-code.txt")
+    project = profile["project"]
+    binding_errors: list[str] = []
+    if bundle.get("status") != "passed":
+        binding_errors.append("AI bundle verification did not pass")
+    if bundle.get("source_free_bundle") is not True:
+        binding_errors.append("AI bundle is not source-free")
+    if submission.get("agent_bundle_status") != "validated":
+        binding_errors.append("agent bundle was not validated in the isolated clone")
+    if submission.get("project_branch") != project["default_branch"]:
+        binding_errors.append("project branch mismatch")
+    if submission.get("test_selector") != project["test_selector"]:
+        binding_errors.append("test selector mismatch")
+    if submission.get("source_worktree_writes") != "none":
+        binding_errors.append("source checkout was written")
+    if not SHA_RE.fullmatch(submission.get("project_commit", "")):
+        binding_errors.append("project commit is not a full lowercase SHA")
+    if not SHA_RE.fullmatch(submission.get("agent_bundle_ref", "")):
+        binding_errors.append("agent bundle ref is not a full lowercase SHA")
+    if not re.fullmatch(r"sh-cloud[0-9]+", submission.get("requested_host", "")):
+        binding_errors.append("requested host is not an approved SHICloud host")
+
+    factory_ok = (
+        factory.get("passed") is True
+        and factory.get("factory_component_unregistered") is False
+        and factory.get("factory_test_not_found") is False
+        and factory.get("simmer_exit_code") == 0
+        and _all_zero(factory.get("uvm_error_count"))
+        and _all_zero(factory.get("uvm_fatal_count"))
+        and lsf_exit_code == 0
+        and simmer_exit_code == 0
+    )
+    overall = "pass" if factory_ok and not binding_errors else "fail"
+    return {
+        "overall": overall,
+        "evidence_kind": "factory_validation",
+        "bazel_map": "not_run",
+        "compile": "pass" if simmer_exit_code == 0 else "fail",
+        "simulation": "pass" if factory_ok else "fail",
+        "coverage": "not_run",
+        "binding_errors": binding_errors,
+        "commit_sha": submission.get("project_commit"),
+        "vibe_soc_ref": submission.get("agent_bundle_ref"),
+        "entry_target": project["entry_target"],
+        "test_selector": submission.get("test_selector"),
+        "simulator": project["simulator"],
+        "lsf_job_id": submission.get("lsf_job_id"),
+        "execution_host": submission.get("requested_host"),
+        "lsf_exit_code": lsf_exit_code,
+        "simmer_exit_code": simmer_exit_code,
+        "uvm_error_count": factory.get("uvm_error_count"),
+        "uvm_fatal_count": factory.get("uvm_fatal_count"),
+    }
+
+
 def summarize_evidence(profile: dict[str, Any], artifact_dir: Path) -> dict[str, Any]:
     validate_profile(profile)
+    if (artifact_dir / "factory-summary.json").is_file():
+        return _summarize_factory_evidence(profile, artifact_dir)
     metadata = _read_json(artifact_dir, "metadata.json")
     verification = _read_json(artifact_dir, "verification.json")
     compile_assessment = _read_json(artifact_dir, "compile-assessment.json")

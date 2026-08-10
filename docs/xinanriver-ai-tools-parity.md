@@ -26,6 +26,12 @@ share role names, descriptions, instruction bodies, MCP server names, target,
 selector, simulator, and evidence meanings. A partial Bazel map remains
 `pass_with_partial_map`; it never becomes a full pass.
 
+The functional ETX factory packet is reviewed separately from a map packet:
+`ai-bundle-verification.json`, `factory-summary.json`, `submission.txt`, exit
+codes, and `command.txt`. A passing factory simulation reports
+`bazel_map=not_run` when no repo map was requested; it does not silently claim
+full Bazel closure or coverage.
+
 The bundle contains no credentials or fixed absolute filesystem paths. The
 ETX automation repository remains the execution control plane; source changes
 to XinAnRiver require a separately approved isolated branch/MR operation.

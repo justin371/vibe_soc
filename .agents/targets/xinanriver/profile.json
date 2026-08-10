@@ -35,6 +35,14 @@
       "sv-dependencies.csv",
       "unresolved-edges.csv"
     ],
+    "factory_required_files": [
+      "ai-bundle-verification.json",
+      "factory-summary.json",
+      "submission.txt",
+      "lsf-exit-code.txt",
+      "simmer-exit-code.txt",
+      "command.txt"
+    ],
     "status_values": ["pass", "pass_with_partial_map", "fail", "not_run"],
     "partial_map_is_pass": false,
     "source_free_artifact": true,
