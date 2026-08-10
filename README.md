@@ -374,10 +374,21 @@ python3 scripts/generate_target_agent_bundle.py \
   --output-dir <XinAnRiver-worktree> --check
 ```
 
-该 bundle 从一份 canonical profile 生成 Claude Code 和 Codex 配置，使用
+生成结果会把 canonical adapter 一并放入目标的
+`.agents/targets/xinanriver/`，因此目标仓库可以独立迭代；已有未登记的
+用户文件不会被静默覆盖。首次接入建议使用隔离 worktree；若目标已有
+`AGENTS.md`、`CLAUDE.md` 或其它生成文件，先人工审查后再显式传入相应的
+overwrite 选项。
+
+该 bundle 采用 `agent_core/` + `.agents/targets/xinanriver/` adapter +
+Claude/Codex projections 三层结构，从一份 canonical profile 生成两套
+功能一致的客户端配置。XinAnRiver 继续使用
 `//hw/dv/project_benches/sys/tb/tests:sys_iod_sanity_test`、
-`sys_tb:sys_iod_sanity_test@1` 和 ETX `Bazel → simmer → VCS → bsub` 路径。
-实现说明和 parity 矩阵见 `docs/xinanriver-ai-tools-parity.md`。
+`sys_tb:sys_iod_sanity_test@1` 和 ETX `Bazel → simmer → bsub` 路径；每个
+MCP server 只暴露其分配的工具。实现说明、core 演进边界和 parity 矩阵见
+`docs/agent-core-architecture.md` 与 `docs/xinanriver-ai-tools-parity.md`。
+其它同构 RTL-DV 项目的 adapter 目录和生成命令见
+`docs/rtl-dv-agent-adapter-template.md`。
 
 ## SoC Reviewer 与知识库
 

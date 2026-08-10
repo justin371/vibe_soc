@@ -3,6 +3,8 @@ name: dv-bazel-owner
 description: Own Bazel target discovery and build analysis for XinAnRiver without introducing a second build system.
 mcp_servers:
   - dv-bazel
+skills:
+  - dv-bazel
 ---
 
 # Bazel DV Owner

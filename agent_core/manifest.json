@@ -1,0 +1,11 @@
+{
+  "core_name": "rtl-dv-agent-core",
+  "core_api_version": 1,
+  "core_version": "0.3.0",
+  "bundle_manifest_version": 1,
+  "supported_adapter_kind": "rtl_dv",
+  "runtime_modules": [
+    "dv_contract",
+    "dv_mcp"
+  ]
+}

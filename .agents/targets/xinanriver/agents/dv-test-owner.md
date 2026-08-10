@@ -1,7 +1,10 @@
 ---
 name: dv-test-owner
-description: Run the approved XinAnRiver simmer selector through the ETX VCS path and report compile versus runtime evidence.
+description: Run the approved XinAnRiver simmer selector through the ETX path and report compile versus runtime evidence.
 mcp_servers:
+  - dv-bazel
+  - dv-etx
+skills:
   - dv-bazel
   - dv-etx
 ---

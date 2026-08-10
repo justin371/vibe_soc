@@ -16,6 +16,7 @@ include $(PROJECT_ROOT)/scripts/config.mk
         coverage-regress coverage-report verdi lint cdc syn formal formal-upf clp-upf \
         clean debugclean deepclean \
         agent-sync agent-check agent-setup mcp-setup \
+        target-agent-bundle target-agent-check \
         xinanriver-agent-bundle xinanriver-agent-check
 
 help:
@@ -29,6 +30,9 @@ help:
 	@echo "  make agent-check                  校验 agent/MCP/loop 契约无漂移"
 	@echo "  make xinanriver-agent-bundle      生成 XinAnRiver Claude/Codex bundle"
 	@echo "  make xinanriver-agent-check       校验已有 XinAnRiver bundle"
+	@echo "  make target-agent-bundle AGENT_PROFILE_DIR=...  生成其它 RTL-DV bundle"
+	@echo "  make target-agent-check AGENT_PROFILE_DIR=...   校验其它 RTL-DV bundle"
+	@echo "                                  manifest 位于 AGENT_BUNDLE_OUTPUT/.agents/agent-manifest.json"
 	@echo "  make <target> [MODULE=<path>]     构建指定模块（默认 chip/top）"
 	@echo "  make module MODULE=<path> TARGET=<target>"
 	@echo ""
@@ -78,6 +82,19 @@ agent-check:
 	@$(PYTHON_RUN) $(PROJECT_ROOT)/scripts/sync_grok_mcp_config.py --check
 	@test -L $(PROJECT_ROOT)/.claude/agents && test -L $(PROJECT_ROOT)/.claude/skills
 	@echo "[AGENT] all checks passed"
+
+AGENT_PROFILE_DIR ?= $(PROJECT_ROOT)/.agents/targets/xinanriver
+AGENT_BUNDLE_OUTPUT ?= $(PROJECT_ROOT)/tmp/target-agent-bundle
+
+target-agent-bundle:
+	@$(PYTHON_RUN) $(PROJECT_ROOT)/scripts/generate_target_agent_bundle.py \
+		--profile-dir $(AGENT_PROFILE_DIR) \
+		--output-dir $(AGENT_BUNDLE_OUTPUT) --write
+
+target-agent-check:
+	@$(PYTHON_RUN) $(PROJECT_ROOT)/scripts/generate_target_agent_bundle.py \
+		--profile-dir $(AGENT_PROFILE_DIR) \
+		--output-dir $(AGENT_BUNDLE_OUTPUT) --check
 
 XINANRIVER_AGENT_OUTPUT ?= $(PROJECT_ROOT)/tmp/xinanriver-agent-bundle
 

@@ -1,6 +1,6 @@
 ---
 name: dv-evidence
-description: Normalize XinAnRiver Bazel, simmer, VCS, and ETX artifacts into an auditable result state.
+description: Normalize XinAnRiver Bazel, simmer, and ETX artifacts into an auditable result state.
 ---
 
 # XinAnRiver Evidence

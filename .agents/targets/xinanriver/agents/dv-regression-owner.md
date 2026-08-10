@@ -5,6 +5,10 @@ mcp_servers:
   - dv-bazel
   - dv-etx
   - dv-evidence
+skills:
+  - dv-bazel
+  - dv-etx
+  - dv-evidence
 ---
 
 # Regression Owner

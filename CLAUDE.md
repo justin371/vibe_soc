@@ -21,6 +21,17 @@ Stage role agents produce canonical artifacts under strict artifact roots only:
 
 Do not create legacy `rtl/`, `constraints/`, root `sim/`, or root `syn/` directories.
 
+### RTL-DV agent core and adapters
+
+`agent_core/` is the reusable, versioned RTL-DV runtime. Project-specific
+facts and role/skill contracts live under `.agents/targets/<project>/`.
+`.claude/`, `.codex/`, `.mcp.json`, root agent entrypoints, and
+`.agents/agent-manifest.json` are generated projections. For XinAnRiver, keep
+the legacy WORKSPACE/Bazel target and simmer selector in the adapter profile;
+do not move them into the reusable core. Change shared behavior in
+`agent_core/`, change project behavior in the adapter, then regenerate and
+check both client projections.
+
 Before dispatching RTL work, read the full silicon-crew rules at `.agents/rules/`, especially `01_swarm_flow.md`, `02_toolchain.md`, and `05_pipeline_state.md`.
 
 ## High-level architecture

@@ -1,11 +1,28 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
+  "core": {
+    "name": "rtl-dv-agent-core",
+    "api_version": 1,
+    "version": "0.3.0"
+  },
+  "adapter": {
+    "name": "xinanriver",
+    "display_name": "XinAnRiver",
+    "kind": "rtl_dv",
+    "runtime": {
+      "contract_module": "xinanriver_dv_contract",
+      "mcp_module": "xinanriver_dv_mcp"
+    }
+  },
   "profile_name": "xinanriver-dv",
   "project": {
     "repository_key": "rtl_dv_dev/XinAnRiver",
     "default_branch": "main",
     "build_system": "bazel",
-    "bazel_mode": "legacy_workspace",
+    "build_mode": "legacy_workspace",
+    "execution_frontend": "simmer",
+    "target_kind": "bazel_label",
+    "selector_kind": "selector_pair",
     "workspace_files": ["WORKSPACE", "WORKSPACE.bazel"],
     "entry_target": "//hw/dv/project_benches/sys/tb/tests:sys_iod_sanity_test",
     "test_selector": "sys_tb:sys_iod_sanity_test@1",
@@ -13,17 +30,20 @@
   },
   "execution": {
     "automation_repository": "Lightelligence/etx-validation-lwang",
-    "automation_ref": "lw/xinanriver-ai-tools-etx",
+    "automation_ref": "main",
     "workflow": "validate_xinanriver_ai_tools.yml",
     "runner_labels": ["self-hosted", "linux", "x64", "etx-vcs"],
     "lsf": {
       "queue": "syn",
       "slots": 8,
       "wall_minutes": 120,
+      "user": "lwang",
       "licensed_tools": ["bazel", "simmer", "VCS"]
     },
     "checkout_policy": "isolated_exact_commit",
-    "runner_policy": "github_runner_then_bsub"
+    "runner_policy": "github_runner_then_bsub",
+    "map_mode": "target",
+    "keep_workdir": false
   },
   "evidence": {
     "required_files": [
@@ -33,7 +53,9 @@
       "bazel-targets.json",
       "source-files.csv",
       "sv-dependencies.csv",
-      "unresolved-edges.csv"
+      "unresolved-edges.csv",
+      "git-history.csv",
+      "repo-map.html"
     ],
     "factory_required_files": [
       "ai-bundle-verification.json",
@@ -46,7 +68,39 @@
     "status_values": ["pass", "pass_with_partial_map", "fail", "not_run"],
     "partial_map_is_pass": false,
     "source_free_artifact": true,
-    "credential_scan": "required"
+    "credential_scan": "required",
+    "require_expected_project_branch": true,
+    "require_expected_project_sha": true,
+    "map_identity_fields": ["entry_target", "test_selector", "simulator"],
+    "artifact_files": {
+      "map": {
+        "metadata": "metadata.json",
+        "verification": "verification.json",
+        "compile_assessment": "compile-assessment.json"
+      },
+      "factory": {
+        "bundle": "ai-bundle-verification.json",
+        "summary": "factory-summary.json",
+        "submission": "submission.txt",
+        "lsf_exit": "lsf-exit-code.txt",
+        "frontend_exit": "simmer-exit-code.txt",
+        "command": "command.txt"
+      }
+    },
+    "compile_schema": {
+      "completion_key": "vcs_compile_completed",
+      "exit_code_key": "simmer_exit_code",
+      "binary_present_key": "simv_present"
+    },
+    "factory_schema": {
+      "passed_key": "passed",
+      "component_unregistered_key": "factory_component_unregistered",
+      "test_not_found_key": "factory_test_not_found",
+      "runtime_exit_key": "simmer_exit_code",
+      "error_count_key": "uvm_error_count",
+      "fatal_count_key": "uvm_fatal_count",
+      "simulator_key": "simulator"
+    }
   },
   "safety": {
     "approved_vip": "vip_vcs_svt_pkg",
@@ -59,13 +113,28 @@
       "vendor",
       "vip"
     ],
+    "execution_host_pattern": "sh-cloud[0-9]+(?:\\.rd\\.lgt\\.ai)?",
     "free_form_workflow_command": false,
     "source_mr_merge": false
+  },
+  "constraints": {
+    "required_equals": {
+      "project.default_branch": "main",
+      "project.build_system": "bazel",
+      "project.build_mode": "legacy_workspace",
+      "project.execution_frontend": "simmer",
+      "execution.checkout_policy": "isolated_exact_commit",
+      "execution.runner_policy": "github_runner_then_bsub",
+      "execution.lsf.queue": "syn",
+      "execution.lsf.slots": 8,
+      "safety.approved_vip": "vip_vcs_svt_pkg"
+    }
   },
   "mcp_servers": [
     {
       "name": "dv-bazel",
       "script": "scripts/xinanriver_dv_mcp.py",
+      "tools": ["get_profile"],
       "default_enabled": true,
       "startup_timeout_sec": 30,
       "tool_timeout_sec": 300
@@ -73,6 +142,7 @@
     {
       "name": "dv-evidence",
       "script": "scripts/xinanriver_dv_mcp.py",
+      "tools": ["get_profile", "review_evidence"],
       "default_enabled": true,
       "startup_timeout_sec": 30,
       "tool_timeout_sec": 300
@@ -80,6 +150,7 @@
     {
       "name": "dv-etx",
       "script": "scripts/xinanriver_dv_mcp.py",
+      "tools": ["get_profile", "plan_target_run"],
       "default_enabled": true,
       "startup_timeout_sec": 30,
       "tool_timeout_sec": 300

@@ -2,8 +2,10 @@
 
 ## Bootstrap
 
-`.agents/` is canonical for roles, rules, skills, MCP configuration, and Loop
-scripts. Claude, Codex, and Grok adapters are generated; never hand-edit them.
+`.agents/` is canonical for project roles, rules, skills, MCP configuration,
+and Loop scripts. `agent_core/` is canonical for the reusable RTL-DV agent
+runtime and its versioned contract. Claude, Codex, and Grok adapters are
+generated; never hand-edit them.
 After a fresh clone or agent change, prefer:
 
 ```bash
@@ -27,6 +29,11 @@ scripts/prepare_task_worktree.sh <task-slug>
 
 `make agent-sync` creates `tmp/worktrees/`; other large scratch stays under the
 gitignored `tmp/` tree.
+
+For an RTL-DV adapter, edit `.agents/targets/<project>/` for project behavior
+and `agent_core/` only for behavior shared by multiple projects. Regenerate
+both Claude and Codex projections and check `.agents/agent-manifest.json` after
+either kind of change.
 
 ## Layout and autonomy
 

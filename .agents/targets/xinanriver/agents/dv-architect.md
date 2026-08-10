@@ -4,6 +4,9 @@ description: Plan XinAnRiver DV work from the canonical Bazel target and ETX evi
 mcp_servers:
   - dv-bazel
   - dv-evidence
+skills:
+  - dv-bazel
+  - dv-evidence
 ---
 
 # DV Architect

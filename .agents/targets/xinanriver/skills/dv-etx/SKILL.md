@@ -1,6 +1,6 @@
 ---
 name: dv-etx
-description: Safely dispatch XinAnRiver ETX workflows with fixed inputs and retrieve redacted Bazel/VCS evidence.
+description: Safely dispatch XinAnRiver ETX workflows with fixed inputs and retrieve redacted Bazel/simmer evidence.
 ---
 
 # XinAnRiver ETX
